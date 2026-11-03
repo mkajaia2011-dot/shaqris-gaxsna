@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ka">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>შაქრის გახსნის მოლეკულური სიმულაცია</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 920px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #1e3a8a;
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .main-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .main-layout {
+                display: grid;
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        .canvas-container {
+            position: relative;
+            background-color: #e0f2fe;
+            border: 3px solid #0284c7;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(2, 132, 199, 0.15);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 400px;
+        }
+
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            background: #f8fafc;
+            padding: 18px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #334155;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .temp-display {
+            color: #0284c7;
+            font-weight: 600;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            background: #e2e8f0;
+            color: #334155;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .btn:hover {
+            background: #cbd5e1;
+        }
+
+        .btn.active {
+            background: #0284c7;
+            color: white;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+        }
+
+        .btn-action {
+            background: #16a34a;
+            color: white;
+            padding: 12px;
+            font-size: 15px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+        }
+
+        .btn-action:hover {
+            background: #15803d;
+        }
+
+        .btn-action.paused {
+            background: #f59e0b;
+        }
+
+        .btn-action.paused:hover {
+            background: #d97706;
+        }
+
+        .btn-action.reset {
+            background: #dc2626;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: #0284c7;
+            cursor: pointer;
+        }
+
+        .stats-card {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .stats-card strong {
+            color: #166534;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #16a34a, #22c55e);
+            transition: width 0.15s ease;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            font-size: 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot.water { background: #0284c7; }
+        .dot.sugar-surface { background: #f97316; }
+        .dot.sugar-inner { background: #94a3b8; }
+        .dot.dissolved { background: #a855f7; }
+
+        .completion-banner {
+            display: none;
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 5px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>შაქრის გახსნის მოლეკულური მოდელირება</h1>
+    <p class="subtitle">ქიმიის ინტერაქციული სიმულაცია (ზედაპირის ფართობისა და ტემპერატურის ეფექტი)</p>
+
+    <div class="main-layout">
+        <div>
+            <div class="canvas-container">
+                <canvas id="simCanvas" width="550" height="400"></canvas>
+            </div>
+            
+            <div class="legend" style="margin-top: 10px;">
+                <div class="legend-item"><span class="dot water"></span> წყალი (H₂O)</div>
+                <div class="legend-item"><span class="dot sugar-surface"></span> შაქარი (ზედაპირი)</div>
+                <div class="legend-item"><span class="dot sugar-inner"></span> შაქარი (შიგნით)</div>
+                <div class="legend-item"><span class="dot dissolved"></span> გახსნილი შაქარი</div>
+            </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="control-group">
+                <label>შაქრის ფორმა:</label>
+                <div class="btn-group">
+                    <button class="btn active" id="modeCube" onclick="setMode('cube')">ნატეხი</button>
+                    <button class="btn" id="modePowder" onclick="setMode('powder')">ფხვნილი</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="tempRange">
+                    <span>ტემპერატურა (მოლეკულების სიჩქარე):</span>
+                    <span class="temp-display" id="tempDisplay">ზომიერი (2)</span>
+                </label>
+                <input type="range" id="tempRange" min="1" max="5" value="2" step="1" oninput="updateTemp(this.value)">
+            </div>
+
+            <button class="btn-action" id="startBtn" onclick="toggleSim()">გახსნის დაწყება</button>
+            <button class="btn" onclick="resetSim()">თავიდან დაწყება</button>
+
+            <div class="stats-card">
+                <div><strong>გახსნილია:</strong> <span id="dissolvedPct">0%</span></div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div style="margin-top: 6px;"><strong>გასული დრო:</strong> <span id="timer">0.0</span> წმ</div>
+                <div><strong>აქტიური ზედაპირი:</strong> <span id="surfaceInfo">დაბალი (28 მოლეკულა)</span></div>
+                <div class="completion-banner" id="completionBanner">🎉 შაქარი სრულად გაიხსნა!</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let isRunning = false;
+    let mode = 'cube'; // 'cube' ან 'powder'
+    let temperature = 2;
+    let elapsedTime = 0;
+    let lastTimestamp = 0;
+    let animId = null;
+
+    let waterMolecules = [];
+    let sugarMolecules = [];
+    const NUM_WATER = 45;
+    const MOL_RADIUS = 6;
+    const WATER_RADIUS = 4;
+    const MOL_SPACING = 15;
+
+    // წყლის მოლეკულის კლასი
+    class Water {
+        constructor() {
+            this.x = Math.random() * (canvas.width - 30) + 15;
+            this.y = Math.random() * (canvas.height - 30) + 15;
+            const angle = Math.random() * Math.PI * 2;
+            const speed = (0.9 + Math.random() * 0.6) * temperature;
+            this.vx = Math.cos(angle) * speed;
+            this.vy = Math.sin(angle) * speed;
+        }
+
+        updateSpeed(newTemp, oldTemp) {
+            const factor = newTemp / oldTemp;
+            this.vx *= factor;
+            this.vy *= factor;
+        }
+
+        update() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            // კედლებიდან არეკვლა
+            if (this.x < WATER_RADIUS) {
+                this.x = WATER_RADIUS;
+                this.vx *= -1;
+            } else if (this.x > canvas.width - WATER_RADIUS) {
+                this.x = canvas.width - WATER_RADIUS;
+                this.vx *= -1;
+            }
+
+            if (this.y < WATER_RADIUS) {
+                this.y = WATER_RADIUS;
+                this.vy *= -1;
+            } else if (this.y > canvas.height - WATER_RADIUS) {
+                this.y = canvas.height - WATER_RADIUS;
+                this.vy *= -1;
+            }
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, WATER_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = '#0284c7';
+            ctx.fill();
+
+            // წყლის მოლეკულის პატარა ბზინვარება
+            ctx.beginPath();
+            ctx.arc(this.x - 1.2, this.y - 1.2, 1.2, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fill();
+        }
+    }
+
+    // შაქრის მოლეკულის კლასი
+    class Sugar {
+        constructor(x, y, clusterId, row, col) {
+            this.x = x;
+            this.y = y;
+            this.originX = x;
+            this.originY = y;
+            this.clusterId = clusterId;
+            this.row = row;
+            this.col = col;
+
+            this.isDissolved = false;
+            this.isSurface = false;
+            this.bonds = 100; // კავშირის ენერგია / გამძლეობა
+            this.maxBonds = 100;
+
+            this.vx = 0;
+            this.vy = 0;
+        }
+
+        update() {
+            if (this.isDissolved) {
+                // გახსნილი მოლეკულა თავისუფლად დაცურავს ხსნარში
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // კედლებიდან არეკვლა
+                if (this.x < MOL_RADIUS) {
+                    this.x = MOL_RADIUS;
+                    this.vx *= -1;
+                } else if (this.x > canvas.width - MOL_RADIUS) {
+                    this.x = canvas.width - MOL_RADIUS;
+                    this.vx *= -1;
+                }
+
+                if (this.y < MOL_RADIUS) {
+                    this.y = MOL_RADIUS;
+                    this.vy *= -1;
+                } else if (this.y > canvas.height - MOL_RADIUS) {
+                    this.y = canvas.height - MOL_RADIUS;
+                    this.vy *= -1;
+                }
+
+                // მცირე ბროუნისებური რხევა
+                this.vx += (Math.random() - 0.5) * 0.1 * temperature;
+                this.vy += (Math.random() - 0.5) * 0.1 * temperature;
+
+                // სიჩქარის ზღვარი
+                const maxSpeed = temperature * 1.5;
+                const currentSpeed = Math.hypot(this.vx, this.vy);
+                if (currentSpeed > maxSpeed && currentSpeed > 0) {
+                    this.vx = (this.vx / currentSpeed) * maxSpeed;
+                    this.vy = (this.vy / currentSpeed) * maxSpeed;
+                }
+            }
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, MOL_RADIUS, 0, Math.PI * 2);
+
+            if (this.isDissolved) {
+                ctx.fillStyle = '#a855f7'; // იასამნისფერი: გახსნილი
+            } else if (this.isSurface) {
+                // ზედაპირის მოლეკულა ოდნავ იცვლის ელფერს დაშლისას
+                const dmgRatio = this.bonds / this.maxBonds;
+                ctx.fillStyle = dmgRatio > 0.5 ? '#f97316' : '#ea580c'; // ნარინჯისფერი: ზედაპირი
+            } else {
+                ctx.fillStyle = '#94a3b8'; // ნაცრისფერი: შიგნით
+            }
+            ctx.fill();
+
+            // მოცულობითი კონტური
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // მცირე სინათლის ანარეკლი
+            ctx.beginPath();
+            ctx.arc(this.x - 1.8, this.y - 1.8, 1.8, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.fill();
+        }
+    }
+
+    // შაქრის ბადის ინიციალიზაცია
+    function initSugar() {
+        sugarMolecules = [];
+
+        if (mode === 'cube') {
+            // ერთი მთლიანი ნატეხი: 8x8 კრისტალური მესერი = 64 მოლეკულა
+            const rows = 8;
+            const cols = 8;
+            const startX = (canvas.width - cols * MOL_SPACING) / 2 + MOL_RADIUS;
+            const startY = (canvas.height - rows * MOL_SPACING) / 2 + MOL_RADIUS;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const x = startX + c * MOL_SPACING;
+                    const y = startY + r * MOL_SPACING;
+                    sugarMolecules.push(new Sugar(x, y, 0, r, c));
+                }
+            }
+        } else {
+            // ფხვნილი: 4 პატარა გროვა (4x4 = 16 თითოეულში) = სულ 64 მოლეკულა
+            const clusters = [
+                { cx: 120, cy: 160 },
+                { cx: 380, cy: 150 },
+                { cx: 160, cy: 280 },
+                { cx: 360, cy: 290 }
+            ];
+
+            const rows = 4;
+            const cols = 4;
+            clusters.forEach((cluster, clusterId) => {
+                const startX = cluster.cx - (cols * MOL_SPACING) / 2 + MOL_RADIUS;
+                const startY = cluster.cy - (rows * MOL_SPACING) / 2 + MOL_RADIUS;
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const x = startX + c * MOL_SPACING;
+                        const y = startY + r * MOL_SPACING;
+                        sugarMolecules.push(new Sugar(x, y, clusterId, r, c));
+                    }
+                }
+            });
+        }
+
+        updateSurfaceStatus();
+    }
+
+    // ზედაპირის მოლეკულების დადგენა (ვის აქვს შეხება წყალთან)
+    function updateSurfaceStatus() {
+        let surfaceCount = 0;
+
+        sugarMolecules.forEach(mol => {
+            if (mol.isDissolved) {
+                mol.isSurface = false;
+                return;
+            }
+
+            // შევამოწმოთ მეზობლები იმავე კლასტერში: ზევით, ქვევით, მარცხნივ, მარჯვნივ
+            const neighbors = sugarMolecules.filter(other => 
+                other.clusterId === mol.clusterId &&
+                !other.isDissolved &&
+                ((Math.abs(other.row - mol.row) === 1 && other.col === mol.col) ||
+                 (Math.abs(other.col - mol.col) === 1 && other.row === mol.row))
+            );
+
+            // თუ რომელიმე მხარე ღიაა (ნაკლებია 4 მეზობელზე), მოლეკულა ზედაპირზეა!
+            if (neighbors.length < 4) {
+                mol.isSurface = true;
+                surfaceCount++;
+            } else {
+                mol.isSurface = false;
+            }
+        });
+
+        // ზედაპირის ინფორმაციის განახლება UI-ში
+        const surfaceEl = document.getElementById('surfaceInfo');
+        if (mode === 'cube') {
+            surfaceEl.textContent = `დაბალი (${surfaceCount} მოლეკულა)`;
+            surfaceEl.style.color = '#c2410c';
+        } else {
+            surfaceEl.textContent = `მაღალი (${surfaceCount} მოლეკულა)`;
+            surfaceEl.style.color = '#15803d';
+        }
+
+        return surfaceCount;
+    }
+
+    // წყლის მოლეკულების ინიციალიზაცია
+    function initWater() {
+        waterMolecules = [];
+        for (let i = 0; i < NUM_WATER; i++) {
+            waterMolecules.push(new Water());
+        }
+    }
+
+    // შეჯახებების და გახსნის ფიზიკა
+    function handleCollisions() {
+        let stateChanged = false;
+
+        waterMolecules.forEach(w => {
+            sugarMolecules.forEach(s => {
+                // მხოლოდ ზედაპირის გაუხსნელ მოლეკულებთან ხდება გახსნის ურთიერთქმედება
+                if (!s.isDissolved && s.isSurface) {
+                    const dx = w.x - s.x;
+                    const dy = w.y - s.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = WATER_RADIUS + MOL_RADIUS;
+
+                    if (dist < minDist && dist > 0) {
+                        // წყლის მოლეკულა ირეკლება
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        const dot = w.vx * nx + w.vy * ny;
+                        
+                        if (dot < 0) {
+                            w.vx -= 2 * dot * nx;
+                            w.vy -= 2 * dot * ny;
+                        }
+
+                        // მოლეკულათშორისი ბმის დასუსტება ტემპერატურის მიხედვით
+                        // მაღალი ტემპერატურა = უფრო ძლიერი კინეტიკური ენერგია და გახსნა
+                        const damage = 18 * (temperature * 0.75 + 0.5);
+                        s.bonds -= damage;
+
+                        if (s.bonds <= 0) {
+                            // მოლეკულა წყდება კრისტალს და იხსნება
+                            s.isDissolved = true;
+                            s.isSurface = false;
+                            
+                            // ენიჭება იმპულსი წყალში დიფუზიისთვის
+                            const angle = Math.atan2(ny, nx) + (Math.random() - 0.5) * 0.8;
+                            const speed = (0.5 + Math.random() * 0.5) * temperature;
+                            s.vx = Math.cos(angle) * speed;
+                            s.vy = Math.sin(angle) * speed;
+
+                            stateChanged = true;
+                        }
+                    }
+                }
+            });
+        });
+
+        if (stateChanged) {
+            updateSurfaceStatus();
+            updateStats();
+        }
+    }
+
+    // სტატისტიკის განახლება
+    function updateStats() {
+        const total = sugarMolecules.length;
+        if (total === 0) return;
+
+        const dissolvedCount = sugarMolecules.filter(m => m.isDissolved).length;
+        const pct = Math.round((dissolvedCount / total) * 100);
+
+        document.getElementById('dissolvedPct').textContent = `${pct}%`;
+        document.getElementById('progressBar').style.width = `${pct}%`;
+
+        if (pct >= 100) {
+            isRunning = false;
+            const startBtn = document.getElementById('startBtn');
+            startBtn.textContent = 'დასრულდა ✓';
+            startBtn.classList.remove('paused');
+            document.getElementById('completionBanner').style.display = 'block';
+        }
+    }
+
+    // ანიმაციის მთავარი ციკლი
+    function animate(timestamp) {
+        if (!lastTimestamp) lastTimestamp = timestamp;
+        const delta = timestamp - lastTimestamp;
+        lastTimestamp = timestamp;
+
+        if (isRunning) {
+            elapsedTime += delta;
+            document.getElementById('timer').textContent = (elapsedTime / 1000).toFixed(1);
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // წყლის მოლეკულების განახლება და დახატვა
+        waterMolecules.forEach(w => {
+            if (isRunning) w.update();
+            w.draw();
+        });
+
+        // შაქრის მოლეკულების განახლება და დახატვა
+        sugarMolecules.forEach(s => {
+            if (isRunning) s.update();
+            s.draw();
+        });
+
+        // შეჯახებების დამუშავება
+        if (isRunning) {
+            handleCollisions();
+        }
+
+        animId = requestAnimationFrame(animate);
+    }
+
+    // რეჟიმის შეცვლა (ნატეხი / ფხვნილი)
+    function setMode(newMode) {
+        if (mode === newMode && sugarMolecules.length > 0) return;
+        mode = newMode;
+
+        document.getElementById('modeCube').classList.toggle('active', mode === 'cube');
+        document.getElementById('modePowder').classList.toggle('active', mode === 'powder');
+
+        resetSim();
+    }
+
+    // ტემპერატურის განახლება
+    function updateTemp(val) {
+        const oldTemp = temperature;
+        temperature = parseFloat(val);
+
+        const tempTexts = {
+            1: 'ძალიან დაბალი (1)',
+            2: 'ზომიერი (2)',
+            3: 'საშუალო (3)',
+            4: 'მაღალი (4)',
+            5: 'ძალიან მაღალი (ცხელი) (5)'
+        };
+        document.getElementById('tempDisplay').textContent = tempTexts[temperature] || temperature;
+
+        // მოქმედი წყლის მოლეკულების სიჩქარის პირდაპირი მორგება
+        waterMolecules.forEach(w => w.updateSpeed(temperature, oldTemp));
+    }
+
+    // სიმულაციის დაწყება / შეჩერება
+    function toggleSim() {
+        const dissolvedCount = sugarMolecules.filter(m => m.isDissolved).length;
+        if (dissolvedCount === sugarMolecules.length) {
+            resetSim();
+            isRunning = true;
+            document.getElementById('startBtn').textContent = 'შეჩერება';
+            document.getElementById('startBtn').classList.add('paused');
+            return;
+        }
+
+        isRunning = !isRunning;
+        const startBtn = document.getElementById('startBtn');
+
+        if (isRunning) {
+            startBtn.textContent = 'შეჩერება';
+            startBtn.classList.add('paused');
+        } else {
+            startBtn.textContent = 'გაგრძელება';
+            startBtn.classList.remove('paused');
+        }
+    }
+
+    // სიმულაციის გადატვირთვა
+    function resetSim() {
+        isRunning = false;
+        elapsedTime = 0;
+        lastTimestamp = 0;
+
+        document.getElementById('timer').textContent = '0.0';
+        document.getElementById('dissolvedPct').textContent = '0%';
+        document.getElementById('progressBar').style.width = '0%';
+        document.getElementById('completionBanner').style.display = 'none';
+
+        const startBtn = document.getElementById('startBtn');
+        startBtn.textContent = 'გახსნის დაწყება';
+        startBtn.classList.remove('paused');
+
+        initWater();
+        initSugar();
+        updateStats();
+    }
+
+    // სტარტი ჩატვირთვისას
+    initWater();
+    initSugar();
+    updateStats();
+    animId = requestAnimationFrame(animate);
+</script>
+
+</body>
+</html>
